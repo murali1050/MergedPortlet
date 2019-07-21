@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+	<!-- define the project -->
+	<project name = "HelloWorldPortlet" default="combinedBuild" basedir=".">
+		
+	<!-- define project properties -->
+	<property name="compiler" value="modern"/>
+	<property name="fork" value="no"/>
+	<property name="verbose" value="no"/>
+	<property name="debug" value="on"/>
+	<property name="optimize" value="on"/>
+	<property name="deprecation" value="on"/>
+	<property name="target" value="1.5"/>
+	<property name="source" value="1.5"/>
+	<property file="build.properties" />
+	<property environment="env"/>
+		
+	<!-- define properties to refer to directories in the project -->
+	<property name="webinf.dir" value="WEB-INF"/>
+	<property name="webinf.lib.dir" value="WEB-INF/lib"/>
+	<property name="lib.dir" value="lib"/>
+	<property name="src.dir" value="src"/>
+	<property name="build.dir" value="build"/>
+
+	<property name="webinf.classes.dir" value="${webinf.dir}/classes"/>
+	<property name="webinf.classes.content.dir" value="${webinf.dir}/classes/content"/>
+	<property name="web.xml" value="${webinf.dir}/web.xml"/>
+		
+	<property name="webinf.lib.full.dir" value="src/main/web/WEB-INF/lib"/>
+	<property name="web.dir" value="src/main/webFolder/web/fw/asdcLayer"/>	
+	<property name="input.dir.combined" value="${web.dir}/combined"/>
+	<property name="input.dir.js" value="${web.dir}/js"/>
+	<property name="input.dir.css" value="${web.dir}/css"/>
+	<property name="output.dir.compressed" value="${web.dir}/compressed"/>
+	<property name="web.auess.dir" value="src/main/webFolder/web/fw/asdcLayer/auess/theme"/>
+	<property name="auess.dir.css" value="${web.auess.dir}/auessome"/>
+	
+		
+	<fileset id="webapp.libs" dir="${webinf.lib.dir}">
+		<include name="*.jar"/>
+	</fileset>
+	<fileset id="libs" dir="${lib.dir}">
+		<include name="*.jar"/>
+	</fileset>
+
+	<path id="class.path">
+		<pathelement path="${webinf.classes.dir}"/>
+		<fileset refid="webapp.libs"/>
+		<fileset refid="libs"/>
+	</path>
+
+	
+	
+	<fileset id="war.files" dir=".">
+		<include name="${webinf.dir}/**"/>
+		<exclude name="${webinf.dir}/Language-ext.properties"/>
+		<include name="images/**"/>
+		<include name="css/**"/>
+		<include name="js/**"/>
+		<exclude name="${web.xml}"/>
+	</fileset>
+
+	<!-- compile target to compile the sources -->
+	<target name="compile">
+		<mkdir dir="${webinf.classes.dir}"/>
+		<!-- Content directory contains Liferay resource bundle-->
+		<mkdir dir="${webinf.classes.content.dir}"/>
+		<javac srcdir="${src.dir}" destdir="${webinf.classes.dir}"
+		       fork="${fork}" verbose="${verbose}" deprecation="${deprecation}"
+		       debug="${debug}" optimize="${optimize}"
+		       compiler="${compiler}" target="${target}" source="${source}">
+			<classpath refid="class.path"/>
+		</javac>
+		<copy todir="${webinf.classes.dir}" preservelastmodified="true">
+			<fileset dir="${src.dir}">
+				<include name="**/*.properties"/>
+			</fileset>
+		</copy>
+		<copy todir="${webinf.classes.content.dir}">
+			<fileset dir="${webinf.dir}">
+				<include name="Language-ext.properties"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- target to create the project WAR file -->
+	<target name="build" depends="clean,compile">
+		<mkdir dir="${build.dir}"/>
+		<war destfile="${build.dir}/HelloWorldPortlet.war" webxml="${web.xml}">
+			<fileset refid="war.files"/>
+		</war>
+		<copy todir="${liferay.portal.home}/deploy">
+			<fileset dir="${build.dir}">
+				<include name="**/*.war" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- target to clean up all files created by various tasks -->
+	<target name="clean">
+		<delete quiet="true" includeemptydirs="true">
+			<fileset dir="${webinf.classes.dir}" includes="**/*"/>
+			<fileset dir="${build.dir}"/>
+			<fileset dir="${work.dir}"/>
+		</delete>
+	</target>
+		<target name="cleanJSBuild">
+				<delete quiet="true" includeemptydirs="true">
+					<fileset dir="${input.dir.combined}" includes="**/*"/>
+					<fileset dir="${output.dir.compressed}" includes="**/*"/>
+				</delete>
+			</target>
+		<taskdef name="yuicompress" classname="net.noha.tools.ant.yuicompressor.tasks.YuiCompressorTask">
+		        <classpath>
+		            <pathelement path="${webinf.lib.full.dir}/yuicompressor-2.2.5.jar" />
+		            <pathelement path="${webinf.lib.full.dir}/yui-compressor-ant-task-0.5.1.jar" />
+		            <pathelement path="${webinf.lib.full.dir}/yuirhino-1.6R7.jar" />
+		        </classpath>
+		 </taskdef>
+		<target name="compressFiles">
+			<yuicompress warn="true" munge="true" preserveAllSemiColons="true" fromDir="${input.dir.combined}" toDir="${output.dir.compressed}">
+				<include name="*.js"/>
+				<include name="*.css"/>	
+			</yuicompress>
+		</target>
+		
+		<target name="buildJs">
+			<echo message="Packing home page dcp custom build "/>
+			    	<concat destfile="${input.dir.combined}/combined.js">
+			    		<filelist dir="." files="${input.dir.js}/CollaborateController.js,${input.dir.js}/TabValues.js,${input.dir.js}/placeholders.min.js,${input.dir.js}/updateAtbController.js,${input.dir.js}/WorkviewController.js,${input.dir.js}/IssuesTabController.js,${input.dir.js}/RisksTabController.js,${input.dir.js}/deliveryTabController.js,${input.dir.js}/ActivityIssueTabController.js,${input.dir.js}/ActivityRiskTabController.js,${input.dir.js}/contentCollateralTabController.js,${input.dir.js}/progressTabController.js,${input.dir.js}/NotesTabController.js,${input.dir.js}/NewsController.js,${input.dir.js}/overviewTabController.js,${input.dir.js}/commonRiskIssuesController.js,${input.dir.js}/addPost.js,${input.dir.js}/myATBController.js,${input.dir.js}/activityTimeEntry.js"/>
+			        </concat>
+			<echo message="Packing home page dcp custom build "/>
+					<concat destfile="${input.dir.combined}/combined_FR.js">
+			    		<filelist dir="." files="${input.dir.js}/CollaborateController.js,${input.dir.js}/TabValues_FR.js,${input.dir.js}/placeholders.min.js,${input.dir.js}/updateAtbController.js,${input.dir.js}/WorkviewController.js,${input.dir.js}/IssuesTabController.js,${input.dir.js}/RisksTabController.js,${input.dir.js}/deliveryTabController.js,${input.dir.js}/ActivityIssueTabController.js,${input.dir.js}/ActivityRiskTabController.js,${input.dir.js}/contentCollateralTabController.js,${input.dir.js}/progressTabController.js,${input.dir.js}/NotesTabController.js,${input.dir.js}/NewsController.js,${input.dir.js}/overviewTabController.js,${input.dir.js}/commonRiskIssuesController.js,${input.dir.js}/addPost.js,${input.dir.js}/myATBController.js,${input.dir.js}/activityTimeEntry.js"/>
+			        </concat>
+		</target>
+		
+		<target name="buildcss">
+					<echo message="Packing home page dcp custom build "/>
+					    	<concat destfile="${input.dir.combined}/combined.css">
+					    			<filelist dir="." files="${input.dir.css}/RibbonPage.css,${input.dir.css}/progressTab.css,${input.dir.css}/notesTab.css,${input.dir.css}/collateralTab.css,${input.dir.css}/AddRisksIssues.css,${input.dir.css}/activityTimeEntry.css,${input.dir.css}/HomePage.css,${input.dir.css}/GACollaborate.css,${input.dir.css}/GANewsHome.css,${input.dir.css}/overViewCSS.css,${input.dir.css}/ContributingResource.css,${input.dir.css}/PrimaryResource.css"/>
+					        </concat>
+					<echo message="Packing home page dcp custom build "/>
+						<concat destfile="${input.dir.combined}/combined_FR.css">
+							<filelist dir="." files="${input.dir.css}/RibbonPage.css,${input.dir.css}/overViewCSS.css,${input.dir.css}/progressTab.css,${input.dir.css}/notesTab.css,${input.dir.css}/collateralTab.css,${input.dir.css}/AddRisksIssues.css,${input.dir.css}/activityTimeEntry.css,${input.dir.css}/HomePage_FR.css,${input.dir.css}/GACollaborate_FR.css,${input.dir.css}/GANews_Fr.css,${input.dir.css}/ContributingResource_FR.css,${input.dir.css}/PrimaryResource_FR.css"/>
+						</concat>
+					<echo message="Packing home page dcp custom build "/>
+						<concat destfile="${auess.dir.css}/combined_auess.css">
+							<filelist dir="." files="${auess.dir.css}/auess-explorer.css,${auess.dir.css}/auess-base.css,${auess.dir.css}/auess-xwt.css"/>
+						</concat>
+					
+		</target>
+		<target name="combinedBuild" depends="cleanJSBuild,buildcss,buildJs,compressFiles">
+			<echo message="Packing home page dcp custom build "/>
+		</target>
+</project>
